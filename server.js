@@ -69,13 +69,13 @@ const requestListener = async (req, res) => {
     const id = req.url.split('/').pop()
     // console.log('刪除:', id)
     // 刪除所有 = Post.deleteMany({})
-    Post.findByIdAndDelete(id).then(res => {
-      console.log('刪除成功', res);
+    try {
+      await Post.findByIdAndDelete(id)
       handler.success(res, '刪除成功')
-    }).catch(err => {
-      console.log('刪除失敗', err);
-      handler.error(res)
-    })
+    } catch (error) {
+      handler.error(res, error)
+    }
+
   } else {
     handler.error(res)
   }
