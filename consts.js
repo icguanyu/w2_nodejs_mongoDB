@@ -5,11 +5,11 @@ const headers = {
   'Content-Type': 'application/json'
 }
 const handler = {
-  error(res) {
+  error(res, err) {
     res.writeHead(400, headers)
     res.write(JSON.stringify({
       status: 'false',
-      message: '欄位錯誤啦'
+      message: '欄位錯誤啦。' + err　//test
     }))
     res.end()
   },

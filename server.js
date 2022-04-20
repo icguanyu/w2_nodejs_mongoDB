@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv')
 const handler = require('./consts');
 // models
-const Room = require('./models/room')
+const Post = require('./models/post')
 
 dotenv.config({ path: './config.env' })
 
@@ -18,25 +18,6 @@ mongoose.connect(DB, { connectTimeoutMS: 1000 })
   });
 
 
-
-// Room.create({
-//   name: '西格瑪單人房',
-//   price: 100,
-//   ratting: 5.0
-// }).then(() => {
-//   console.log('新增成功');
-// }).catch(err => {
-//   console.log('catch error: ', err.errors);
-// })
-
-
-// Room.findByIdAndUpdate('625ba89688ead86fdf137ce2', {
-//   name: '1234569567'
-// }).then(() => {
-//   console.log('更新成功');
-// }).catch(err => {
-//   console.log('catch err', err);
-// })
 const requestListener = async (req, res) => {
 
   let body = ''
@@ -45,55 +26,58 @@ const requestListener = async (req, res) => {
   })
 
   console.log(body);
-  if (req.url == '/rooms' && req.method == 'GET') {
-    const rooms = await Room.find()
-    handler.success(res, rooms)
-  } else if (req.url == '/rooms' && req.method == 'POST') {
+  if (req.url == '/posts' && req.method == 'GET') {
+    const posts = await Post.find()
+    handler.success(res, posts)
+  } else if (req.url == '/posts' && req.method == 'POST') {
     req.on('end', async () => {
       try {
         const data = JSON.parse(body)
-        const newRoom = await Room.create(
+        const newPost = await Post.create(
           {
-            name: data.name,
-            price: data.price,
-            ratting: data.ratting
+            title: data.title,
+            description: data.description,
+            content: data.content,
+            author: data.ratting,
+            score: data.score,
+            cover: data.cover
           }
         )
-        handler.success(res, newRoom)
+        handler.success(res, newPost)
 
       } catch (err) {
         console.log('catch err: ', err);
-        handler.error(res)
+        handler.error(res, err)
 
       }
     })
-  } else if (req.url.startsWith('/rooms/') && req.method == 'PATCH') {
+  } else if (req.url.startsWith('/posts/') && req.method == 'PATCH') {
     const id = req.url.split('/').pop()
     req.on('end', async () => {
 
       try {
         const data = JSON.parse(body)
         console.log('PATCH:', data);
-        await Room.findByIdAndUpdate(id, data)
+        await Post.findByIdAndUpdate(id, data)
         handler.success(res, '更新成功')
       } catch (error) {
         handler.error(res)
       }
     })
 
-  } else if (req.url.startsWith('/rooms/') && req.method == 'DELETE') {
+  } else if (req.url.startsWith('/posts/') && req.method == 'DELETE') {
     const id = req.url.split('/').pop()
-    try {
-      Room.findByIdAndDelete(id)
+    // console.log('刪除:', id)
+    // 刪除所有 = Post.deleteMany({})
+    Post.findByIdAndDelete(id).then(res => {
+      console.log('刪除成功', res);
       handler.success(res, '刪除成功')
-    } catch (error) {
+    }).catch(err => {
+      console.log('刪除失敗', err);
       handler.error(res)
-    }
-
+    })
   } else {
-    res.writeHead(404, headers)
-    res.write('404 Not found!')
-    res.end()
+    handler.error(res)
   }
 
 }
