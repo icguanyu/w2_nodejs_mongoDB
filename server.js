@@ -40,7 +40,7 @@ const requestListener = async (req, res) => {
             content: data.content,
             type: data.type,
             tags: data.tags,
-            images: data.images
+            image: data.image
           }
         )
         handler.success(res, newPost)
@@ -48,11 +48,9 @@ const requestListener = async (req, res) => {
       } catch (err) {
         console.log('catch err: ', err);
         handler.error(res, err.errors.content)
-
       }
     })
   } else if (req.url.startsWith('/post/') && req.method == 'PATCH') {
-
     req.on('end', async () => {
       const id = req.url.split('/').pop()
       const data = JSON.parse(body)
