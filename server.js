@@ -3,6 +3,7 @@ const http = require('http')
 const mongoose = require('mongoose');
 const dotenv = require('dotenv')
 const handler = require('./consts');
+const headers = require("./headers");
 // models
 const Post = require('./models/post')
 
@@ -26,58 +27,74 @@ const requestListener = async (req, res) => {
   })
 
   console.log(body);
-  if (req.url == '/posts' && req.method == 'GET') {
+  if (req.url == '/post' && req.method == 'GET') {
     const posts = await Post.find()
     handler.success(res, posts)
-  } else if (req.url == '/posts' && req.method == 'POST') {
+  } else if (req.url == '/post' && req.method == 'POST') {
     req.on('end', async () => {
       try {
         const data = JSON.parse(body)
         const newPost = await Post.create(
           {
-            title: data.title,
-            description: data.description,
+            name: data.name,
             content: data.content,
-            author: data.ratting,
-            score: data.score,
-            cover: data.cover
+            type: data.type,
+            tags: data.tags,
+            images: data.images
           }
         )
         handler.success(res, newPost)
 
       } catch (err) {
         console.log('catch err: ', err);
-        handler.error(res, err)
+        handler.error(res, err.errors.content)
 
       }
     })
-  } else if (req.url.startsWith('/posts/') && req.method == 'PATCH') {
-    const id = req.url.split('/').pop()
+  } else if (req.url.startsWith('/post/') && req.method == 'PATCH') {
+
     req.on('end', async () => {
-
+      const id = req.url.split('/').pop()
+      const data = JSON.parse(body)
       try {
-        const data = JSON.parse(body)
-        console.log('PATCH:', data);
-        await Post.findByIdAndUpdate(id, data)
-        handler.success(res, '更新成功')
+        if (data.content && data.name) {
+          // 再次檢查要更新的資料欄位不得為空
+          let updatePost = await Post.findByIdAndUpdate(id, data)
+          if (updatePost !== null) {
+            handler.success(res, '更新成功')
+          } else {
+            handler.error(res, '文章不存在哦!')
+          }
+        } else {
+          handler.error(res, '欄位有缺哦!')
+        }
       } catch (error) {
-        handler.error(res)
+        handler.error(res, '文章不存在哦!')
       }
+
     })
 
-  } else if (req.url.startsWith('/posts/') && req.method == 'DELETE') {
+  } else if (req.url.startsWith('/post/') && req.method == 'DELETE') {
     const id = req.url.split('/').pop()
+
     // console.log('刪除:', id)
     // 刪除所有 = Post.deleteMany({})
-    try {
-      await Post.findByIdAndDelete(id)
-      handler.success(res, '刪除成功')
-    } catch (error) {
-      handler.error(res, error)
+    let post = await Post.findByIdAndDelete(id)
+    if (post !== null) {
+      handler.success(res, post)
+    } else {
+      handler.error(res, '文章不存在哦!')
     }
 
   } else {
-    handler.error(res)
+    res.writeHead(404, headers);
+    res.write(
+      JSON.stringify({
+        status: "false",
+        message: "404 Not Found",
+      })
+    );
+    res.end();
   }
 
 }
